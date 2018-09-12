@@ -1,0 +1,498 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>PinMusic</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.42.2/mapbox-gl.js'></script>
+		<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.42.2/mapbox-gl.css' rel='stylesheet' />
+		<script src="assets/js/oauth.js"></script>
+		<script src="assets/js/spotify-web-api.js"></script>
+		<script src="assets/js/scrollupbutton.js"></script>
+		
+<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.1.1/mapbox-gl-geocoder.min.js'></script>
+<link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.1.1/mapbox-gl-geocoder.css' type='text/css' />
+
+		<style>
+		.marker {
+		  background-image: url('images/spotify-icon.png');
+		  background-size: cover;
+		  width: 50px;
+		  height: 50px;
+		  border-radius: 50%;
+		  cursor: pointer;
+		}
+		#myBtn {
+		  display: none;
+		  position: fixed;
+		  bottom: 10px;
+		  right: 10px;
+		  z-index: 99;
+		  border: none;
+		  outline: none;
+		  background-color: #555;
+		  color: white;
+		  cursor: pointer;
+		  padding: 0px;
+		  border-radius: 10px;
+		  opacity: 50%
+		}
+
+		#myBtn:hover {
+		  background-color: #AD85C6;
+		}
+		</style>
+	
+	</head>
+	<body>
+		<button onclick="topFunction()" id="myBtn" title="Go to top">Top</button>
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header" class="alt">
+						<span class="logo"><img src="images/pinmusic2.png" alt="" /></span>
+						<h1>PinMusic</h1>
+						<p>By Ian Berns, Suqian Wang</p>
+					</header>
+
+				<!-- Nav -->
+					<nav id="nav">
+						<ul>
+							<li><a href="#intro" class="active">Background</a></li>
+							<li><a href="#first">Map</a></li>
+							<li><a href="#second">Spotify</a></li>
+							<li><a href="#cta">Sharing</a></li>
+						</ul>
+					</nav>
+
+				<!-- Main -->
+					<div id="main">
+
+						<!-- Background -->
+							<section id="intro" class="main">
+								<div class="spotlight">
+									<div class="content">
+										<header class="major">
+											<h2>Background</h2>
+										</header>
+										<p>Do you want to share your memory of this place by music?<br><br\> 
+
+										Do you want to experience other places by listening to music?<br><br\> 
+
+										This is a world of music, we live in music, we live in joy <br><br\>
+
+										                                       - Your Friends on PinMusic</p>
+										<ul class="actions">
+											<li><a href="backgroundstory.html" class="button">Learn More</a></li>
+										</ul>
+									</div>
+									<span class="image"><img src="images/background1.jpg" alt="" /></span>
+								</div>
+							</section>
+
+						<!-- Map (Mapbox) -->
+							<section id="first">
+								<!--<header class="major">
+									<h2>Map</h2>
+								</header>-->
+								
+								<div class="12u$">
+									<div class="select-wrapper">
+										<select var id="demo-category">
+											<option value="">- No Playlists :( -</option>
+										</select>
+									</div>			
+								</div>
+								
+								<button onclick="getLocation()">Submit</button>
+								<p id ="demo"></p>							
+				
+								<div id='map' style='width: 1300px; height: 700px;'></div>
+								<script>
+								// authenticate spotify
+								// check if spotify key is in local storages
+								//if(localStorage.getItem("spotify_access_token") == null){ // fixme
+								OAuth.initialize('px3Deszzd5s9yhMMolk4xtdlay4');
+								OAuth.popup('spotify').done(function(result) {
+								// access spotify details
+								var spotifyApi = new SpotifyWebApi();
+
+								// set spotify access token
+								spotifyApi.setAccessToken(result['access_token']);
+
+								// get user playlists
+								spotifyApi.getUserPlaylists()  // note that we don't pass a user id
+								.then(function(data) {
+									var userPlaylists = data;
+									var spotifyPlaylists = [];
+									var spotifyUrls = [];
+									var spotifyImages = [];
+								
+									for(var i in userPlaylists['items']){
+										var name = userPlaylists['items'][i]['name'];
+										spotifyPlaylists.push(name);
+										var playlistURL = userPlaylists['items'][i]['external_urls']['spotify'];
+										spotifyUrls.push(playlistURL + '/ ');
+										//var playlistImage = userPlaylists['items'][i]['image']['0']['url'];
+										//spotifyImages.push(playlistImage);
+									}
+									
+									var dropDownMenu = document.getElementById("demo-category");
+									var playlistsHTML = "<option value=\"\">- Playlist -</option>";
+									
+									for(var i in spotifyPlaylists){
+										playlistsHTML = playlistsHTML + "<option value=\"" + i +"\">" + spotifyPlaylists[i] + "</option>";
+									}
+									
+									console.log(playlistsHTML);
+									dropDownMenu.innerHTML = playlistsHTML;
+									
+									//localStorage.setItem('spotify_playlists', spotifyPlaylists);
+									localStorage.setItem('spotify_urls', JSON.stringify(spotifyUrls));
+									//localStorage.setItem('spotify_images', spotifyImages);
+									
+
+								}, function(err) {
+									console.error(err);
+								});
+							}).fail(function (err) {
+								console.log("Login Error:", err);
+								//handle error with err
+							});
+							//}
+								
+								
+							mapboxgl.accessToken = 'pk.eyJ1Ijoia2lwdmFzcSIsImEiOiJjamFsbzhocXgydjYwMndwbDB4d2RybGFyIn0.hWCA5NQo5VV86-Xr3zmPnw';
+							var map = new mapboxgl.Map({
+								container: 'map',
+								style: 'mapbox://styles/mapbox/streets-v9'
+							});
+							
+							map.addControl(new MapboxGeocoder({
+								accessToken: mapboxgl.accessToken
+							}));
+							
+							map.addControl(new mapboxgl.NavigationControl());
+
+							
+							var x = document.getElementById("demo");
+
+							function getLocation() {
+								if (navigator.geolocation) {
+									navigator.geolocation.watchPosition(showPosition) ;
+								} else { 
+									x.innerHTML = "Geolocation is not supported by this browser.";}
+								}
+								
+							function showPosition(position) {
+								var randNum = Math.random() * 1.5;
+								console.log(randNum);
+							
+								var lat = position.coords.latitude - randNum;
+								var lon = position.coords.longitude - randNum;
+							
+								x.innerHTML = "Latitude: " + lat + "<br>Longitude: " + lon;
+								
+								// grab selected location
+								var yourSelect = document.getElementById( "demo-category" );
+								var playlist = yourSelect.options[ yourSelect.selectedIndex ].text;
+								
+								// grab information
+								var urls = JSON.parse(localStorage.getItem('spotify_urls'));
+								
+								// send to map
+								var el = document.createElement('div');
+								el.className = 'marker';
+								
+								new mapboxgl.Marker(el)
+								.setLngLat([lon, lat])
+								.setPopup(new mapboxgl.Popup({offset:25})
+									.setHTML('<h4>' + playlist + '</h4>' + '</br><button type="button" style="background-color: #1db954" onclick="window.open(\'' + urls[yourSelect.selectedIndex - 1] + '\')">View Playlist</button>'))
+								.addTo(map);
+							}
+								
+								
+								/*var geojson = {
+								  type: 'FeatureCollection',
+								  features: [{
+									type: 'Feature',
+									geometry: {
+									  type: 'Point',
+									  coordinates: [-77.032, 38.913]
+									},
+									properties: {
+									  title: 'Mapbox',
+									  description: 'Washington, D.C.'
+									}
+								  },
+								  {
+									type: 'Feature',
+									geometry: {
+									  type: 'Point',
+									  coordinates: [-122.414, 37.776]
+									},
+									properties: {
+									  title: 'Mapbox',
+									  description: 'San Francisco, California'
+									}
+								  }]
+								};
+								
+								geojson.features.forEach(function(marker) {
+
+								  // create a HTML element for each feature
+								  var el = document.createElement('div');
+								  el.className = 'marker';
+
+								  // make a marker for each feature and add to the map
+								  new mapboxgl.Marker(el)
+								  .setLngLat(marker.geometry.coordinates)
+								  .addTo(map);
+								});*/
+								
+								
+								
+								
+								
+								</script>
+								
+								
+								<!-- end map -->
+							</section>
+
+						<!-- Spotify -->
+							<section id="second" class="main special">
+								<header class="major">
+									<h2>Spotify</h2>
+									<p>Log into your Spotify and retrieve all your playlists that you have created! <br></br>
+									Once you have selected your playlist hit "Submit" to save it to the map on your location.</p>
+								</header>
+	
+	
+								<!--<script>
+									// authenticate spotify
+									// check if spotify key is in local storages
+									//if(localStorage.getItem("spotify_access_token") == null){ // fixme
+									OAuth.initialize('px3Deszzd5s9yhMMolk4xtdlay4');
+									OAuth.popup('spotify').done(function(result) {
+										// access spotify details
+										var spotifyApi = new SpotifyWebApi();
+
+										// set spotify access token
+										spotifyApi.setAccessToken(result['access_token']);
+
+										// get user playlists
+										spotifyApi.getUserPlaylists()  // note that we don't pass a user id
+										.then(function(data) {
+											var userPlaylists = data;
+											var spotifyPlaylists = [];
+											var spotifyUrls = [];
+											var spotifyImages = [];
+										
+											for(var i in userPlaylists['items']){
+												var name = userPlaylists['items'][i]['name'];
+												spotifyPlaylists.push(name);
+												var playlistURL = userPlaylists['items'][i]['external_urls']['spotify'];
+												spotifyUrls.push(playlistURL);
+												//var playlistImage = userPlaylists['items'][i]['image']['0']['url'];
+												//spotifyImages.push(playlistImage);
+											}
+											
+											var dropDownMenu = document.getElementById("demo-category");
+											var playlistsHTML = "<option value=\"\">- Playlist -</option>";
+											
+											for(var i in spotifyPlaylists){
+												playlistsHTML = playlistsHTML + "<option value=\"" + i +"\">" + spotifyPlaylists[i] + "</option>";
+											}
+											
+											console.log(playlistsHTML);
+											dropDownMenu.innerHTML = playlistsHTML;
+											
+											//localStorage.setItem('spotify_playlists', spotifyPlaylists);
+											//localStorage.setItem('spotify_urls', spotifyUrls);
+											//localStorage.setItem('spotify_images', spotifyImages);
+											
+
+										}, function(err) {
+											console.error(err);
+										});
+									}).fail(function (err) {
+										console.log("Login Error:", err);
+										//handle error with err
+									});
+									//}
+							</section>
+
+						<!-- Facebook -->
+									
+							<section id="cta" class="main special">
+								<header class="major">
+									<h2>Suggestions</h2>
+									<p>Feel free to leave any suggestions for the website. <br></br>
+									We want to make this as much of an enjoyable experience as possible for you all!</p>
+								</header>
+
+								<script>
+								/*OAuth.initialize('px3Deszzd5s9yhMMolk4xtdlay4');
+								OAuth.popup('facebook').done(function(result) {
+									result.get("/me?fields=feed.limit(100).with(location){place,message,story,created_time,full_picture,link}").done(function(data) {
+										localStorage.setItem('facebook_data', data);
+										console.log(data); // do something with `data`, e.g. print data.name
+									}).fail(function(err){
+										console.log(err);
+									});
+								
+									console.log(result);
+									// do some stuff with result
+								});*/
+								
+								
+								   
+								   
+								</script>
+					
+								<h2>Form</h2>
+								
+								<!--<form method="post" action="#">
+									
+								
+									<div class="row uniform">
+										<!--<div class="6u 12u$(xsmall)">
+											<input type="text" name="demo-name" id="demo-name" value="" placeholder="Name">
+										</div>
+										<div class="6u$ 12u$(xsmall)">
+											<input type="email" name="demo-email" id="demo-email" value="" placeholder="Email">
+										</div>
+										<div class="12u$">
+											<div class="select-wrapper">
+												<select var id="demo-category">
+													<option value="">- No Playlists :( -</option>
+												</select>
+											</div>			
+										</div>
+										
+										
+										
+										<div class="4u 12u$(small)">
+											<input type="radio" id="demo-priority-low" name="demo-priority" checked="">
+											<label for="demo-priority-low">Low</label>
+										</div>
+										<div class="4u 12u$(small)">
+											<input type="radio" id="demo-priority-normal" name="demo-priority">
+											<label for="demo-priority-normal">Normal</label>
+										</div>
+										<div class="4u$ 12u$(small)">
+											<input type="radio" id="demo-priority-high" name="demo-priority">
+											<label for="demo-priority-high">High</label>
+										</div>
+										<div class="6u 12u$(small)">
+											<input type="checkbox" id="demo-copy" name="demo-copy">
+											<label for="demo-copy">Email me a copy</label>
+										</div>
+										<div class="6u$ 12u$(small)">
+											<input type="checkbox" id="demo-human" name="demo-human" checked="">
+											<label for="demo-human">Not a robot</label>
+										</div>
+										<div class="12u$">
+											<textarea name="demo-message" id="demo-message" placeholder="Enter your message" rows="6"></textarea>
+										</div>
+										<div class="12u$">
+											<ul class="actions">
+												<li><input type="submit" value="Send Message" class="special"></li>
+												<li><input type="reset" value="Reset"></li>
+											</ul>
+										</div>
+									</div>
+								</form>-->
+								
+								<!--<div class="12u$">
+									<div class="select-wrapper">
+										<select var id="demo-category">
+											<option value="">- No Playlists :( -</option>
+										</select>
+									</div>			
+								</div>
+								
+								<button onclick="getLocation()">Submit</button>
+								<p id ="demo"></p>
+								
+								<script>
+									var x = document.getElementById("demo");
+
+									function getLocation() {
+										if (navigator.geolocation) {
+											navigator.geolocation.watchPosition(showPosition);
+										} else { 
+											x.innerHTML = "Geolocation is not supported by this browser.";}
+										}
+										
+									function showPosition(position) {
+										x.innerHTML="Latitude: " + position.coords.latitude + 
+										"<br>Longitude: " + position.coords.longitude;
+										
+										
+									}
+								</script>-->
+								
+		
+
+								<footer class="major">
+									<ul class="actions">
+										<li><a href="https://docs.google.com/forms/d/e/1FAIpQLScf3OUFxRuLOMIuIL1aVuVyIy1D2EgsxxCwCmXNoFV0K8se1Q/viewform?usp=sf_link" class="button special">Feedback</a></li>
+										<li><a href="backgroundstory.html" class="button">Learn More</a></li>
+									</ul>
+								</footer>
+							</section>
+
+					</div>
+
+				<!-- Footer -->
+					<footer id="footer">
+						<section>
+							<h2>Our Dedication</h2>
+							<p>We intend to fully support this project till it's end days. <br></br>
+							Please relay any suggestions to our support email.</p>
+							<ul class="actions">
+								<li><a href="backgroundstory.html" class="button">Learn More</a></li>
+							</ul>
+							
+
+						</section>
+						<section>
+							<h2>Contact Us</h2>
+							<dl class="alt">
+								<dt>Address</dt>
+								<dd>Texas A&M University, College Station, TX, 77840; USA</dd>
+								<dt>Phone</dt>
+								<dd>(979) 555-2705 x 8888</dd>
+								<dt>Email</dt>
+								<dd><a href="https://www.google.com/gmail/about/#">PinMusic@ETB.com</a></dd>
+							</dl>
+							<ul class="icons">
+								<li><a href="https://twitter.com/" class="icon fa-twitter alt"><span class="label">Twitter</span></a></li>
+								<li><a href="https://www.facebook.com/" class="icon fa-facebook alt"><span class="label">Facebook</span></a></li>
+								<li><a href="https://www.instagram.com/" class="icon fa-instagram alt"><span class="label">Instagram</span></a></li>
+								<li><a href="https://www.github.com/" class="icon fa-github alt"><span class="label">GitHub</span></a></li>
+								<li><a href="https://dribbble.com/" class="icon fa-dribbble alt"><span class="label">Dribbble</span></a></li>
+							</ul>
+						</section>
+						<p class="copyright">&copy; 2017PinMusic, USA</p>
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/skel.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<!--[if lte IE 8]><script src="assets/js/ie/respond.min.js"></script><![endif]-->
+			<script src="assets/js/main.js"></script>
+			<script src="assets/js/spotify-web-api.js"></script>
+			<script src="assets/js/scrollupbutton.js"></script>
+			
+	</body>
+</html>
